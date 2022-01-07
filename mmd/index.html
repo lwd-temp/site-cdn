@@ -93,7 +93,6 @@
 
             const loader = new MMDLoader();
 
-            /**
             loader.loadWithAnimation(modelFile, vmdFiles, function (mmd) {
 
                 mesh = mmd.mesh;
@@ -117,7 +116,7 @@
                 helper.enable('animation', false);
 
             }, onProgress, null);
-            **/
+
 
             const controls = new OrbitControls(camera, renderer.domElement);
             controls.minDistance = 10;
