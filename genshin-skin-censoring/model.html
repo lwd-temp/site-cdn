@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-cmn-Hans">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+    <meta name="renderer" content="webkit" />
+    <meta name="force-rendering" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    <!-- MDUI CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdui@1.0.2/dist/css/mdui.min.css" />
+    <title>《原神》国服部分角色皮肤仓促修改事件 - lwd-temp.top</title>
+</head>
+
+<body class="mdui-appbar-with-toolbar mdui-theme-primary-indigo mdui-theme-accent-pink mdui-theme-layout-auto">
+    <header class="mdui-appbar mdui-appbar-fixed">
+        <div class="mdui-progress mdui-hidden" style="position:absolute;top:0;width:100%" id="mdui_progress">
+            <div class="mdui-progress-indeterminate" style="background-color:white"></div>
+        </div>
+        <div class="mdui-toolbar mdui-color-theme">
+            <button class="mdui-btn mdui-btn-icon mdui-ripple" mdui-drawer="{target:'#drawer',swipe:true}"><i
+                    class="mdui-icon material-icons">menu</i></button>
+            <a href="javascript:;" class="mdui-typo-headline">查看旧版模型</a>
+        </div>
+    </header>
+    <drawer class="mdui-drawer mdui-drawer-close" id="drawer">
+        <div class="mdui-list">
+            <a href="index.html" class="mdui-list-item mdui-ripple">
+                <i class="mdui-list-item-icon mdui-icon material-icons">home</i>
+                <div class="mdui-list-item-content">首页</div>
+            </a>
+            <a href="model.html" class="mdui-list-item mdui-ripple">
+                <i class="mdui-list-item-icon mdui-icon material-icons">accessibility</i>
+                <div class="mdui-list-item-content">查看旧版模型</div>
+            </a>
+            <a href="report.html" class="mdui-list-item mdui-ripple">
+                <i class="mdui-list-item-icon mdui-icon material-icons">textsms</i>
+                <div class="mdui-list-item-content">举报地址和文案</div>
+            </a>
+        </div>
+    </drawer>
+    <main class="mdui-container mdui-typo">
+        <p>模型版权归米哈游所有。</p>
+
+        <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/js/libs/ammo.wasm.js"></script>
+
+        <script type="module">
+
+            import * as THREE from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/build/three.module.js';
+
+            import { GUI } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/jsm/libs/lil-gui.module.min.js';
+
+            import { OrbitControls } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/jsm/controls/OrbitControls.js';
+            import { OutlineEffect } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/jsm/effects/OutlineEffect.js';
+            import { MMDLoader } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/jsm/loaders/MMDLoader.js';
+            import { MMDAnimationHelper } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/jsm/animation/MMDAnimationHelper.js';
+
+
+            let mesh, camera, scene, renderer, effect;
+            let helper, ikHelper, physicsHelper;
+
+            const clock = new THREE.Clock();
+
+            Ammo().then(function (AmmoLib) {
+
+                Ammo = AmmoLib;
+
+                init();
+                animate();
+
+            });
+
+
+            function init() {
+
+                const container = document.createElement('div');
+                document.body.appendChild(container);
+
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+                camera.position.z = 30;
+
+                // scene
+
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xffffff);
+
+                const gridHelper = new THREE.PolarGridHelper(30, 10);
+                gridHelper.position.y = - 10;
+                scene.add(gridHelper);
+
+                const ambient = new THREE.AmbientLight(0x666666);
+                scene.add(ambient);
+
+                const directionalLight = new THREE.DirectionalLight(0x887766);
+                directionalLight.position.set(- 1, 1, 1).normalize();
+                scene.add(directionalLight);
+
+                // renderer
+
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(renderer.domElement);
+
+                effect = new OutlineEffect(renderer);
+
+
+                // model
+
+                function onProgress(xhr) {
+
+                    if (xhr.lengthComputable) {
+
+                        const percentComplete = xhr.loaded / xhr.total * 100;
+                        console.log(Math.round(percentComplete, 2) + '% downloaded');
+
+                    }
+
+                }
+
+
+                // const modelFile = 'https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/blank.pmx';
+                const modelFile = 'https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/琴/琴.pmx';
+                const vmdFiles = ['https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/blank.vmd'];
+
+                helper = new MMDAnimationHelper({
+                    afterglow: 2.0
+                });
+
+                const loader = new MMDLoader();
+
+                loader.loadWithAnimation(modelFile, vmdFiles, function (mmd) {
+
+                    mesh = mmd.mesh;
+                    mesh.position.y = - 10;
+                    scene.add(mesh);
+
+                    helper.add(mesh, {
+                        animation: mmd.animation,
+                        physics: true
+                    });
+
+                    ikHelper = helper.objects.get(mesh).ikSolver.createHelper();
+                    ikHelper.visible = false;
+                    scene.add(ikHelper);
+
+                    physicsHelper = helper.objects.get(mesh).physics.createHelper();
+                    physicsHelper.visible = false;
+                    scene.add(physicsHelper);
+
+                    initGui();
+                    helper.enable('animation', false);
+
+                }, onProgress, null);
+
+
+                const controls = new OrbitControls(camera, renderer.domElement);
+                controls.minDistance = 10;
+                controls.maxDistance = 100;
+
+                window.addEventListener('resize', onWindowResize);
+
+                function initGui() {
+
+                    const api = {
+                        'model': "琴",
+                        'ik': true,
+                        'outline': true,
+                        'physics': true,
+                        'show IK bones': false,
+                        'show rigid bodies': false
+                    };
+
+                    const gui = new GUI();
+
+                    gui.add(api, 'model', { 安柏: 'https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/安柏/安柏.pmx', 罗莎莉亚: 'https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/罗莎莉亚/罗莎莉亚.pmx', 莫娜: 'https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/莫娜/莫娜1.0.pmx', 琴: 'https://cdn.jsdelivr.net/gh/lwd-temp/site-cdn/mmd/琴/琴.pmx' }).onChange(function () {
+                        loader.loadWithAnimation(api['model'], vmdFiles, function (mmd) {
+
+                            scene.remove(mesh);
+
+                            mesh = mmd.mesh;
+                            mesh.position.y = - 10;
+                            scene.add(mesh);
+
+                            helper.add(mesh, {
+                                animation: mmd.animation,
+                                physics: true
+                            });
+
+                            ikHelper = helper.objects.get(mesh).ikSolver.createHelper();
+                            ikHelper.visible = false;
+                            scene.add(ikHelper);
+
+                            physicsHelper = helper.objects.get(mesh).physics.createHelper();
+                            physicsHelper.visible = false;
+                            scene.add(physicsHelper);
+
+                            helper.enable('animation', false);
+
+                        }, onProgress, null);
+
+                    });
+
+                    gui.add(api, 'ik').onChange(function () {
+
+                        helper.enable('ik', api['ik']);
+
+                    });
+
+                    gui.add(api, 'outline').onChange(function () {
+
+                        effect.enabled = api['outline'];
+
+                    });
+
+                    gui.add(api, 'physics').onChange(function () {
+
+                        helper.enable('physics', api['physics']);
+
+                    });
+
+                    gui.add(api, 'show IK bones').onChange(function () {
+
+                        ikHelper.visible = api['show IK bones'];
+
+                    });
+
+                    gui.add(api, 'show rigid bodies').onChange(function () {
+
+                        if (physicsHelper !== undefined) physicsHelper.visible = api['show rigid bodies'];
+
+                    });
+
+                }
+
+            }
+
+            function onWindowResize() {
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                effect.setSize(window.innerWidth, window.innerHeight);
+
+            }
+
+
+            function animate() {
+
+                requestAnimationFrame(animate);
+
+                render();
+
+            }
+
+            function render() {
+
+                helper.update(clock.getDelta());
+                effect.render(scene, camera);
+
+            }
+
+        </script>
+    </main>
+
+    <!-- MDUI JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/mdui@1.0.2/dist/js/mdui.min.js"></script>
+</body>
+
+</html>
